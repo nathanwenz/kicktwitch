@@ -22,11 +22,11 @@ KICK_CLIENT_ID = st.secrets.get("KICK_CLIENT_ID", "")
 KICK_CLIENT_SECRET = st.secrets.get("KICK_CLIENT_SECRET", "")
 
 # Endpoints Oficiais das APIs
-TWITCH_OAUTH_URL = "https://id." + "twitch.tv/oauth2/token"
-TWITCH_USERS_URL = "https://api." + "twitch.tv/helix/users"
-TWITCH_CHAT_URL = "https://api." + "twitch.tv/helix/chat/messages"
-KICK_CHANNEL_URL = "[suspicious link removed]"
-KICK_CHAT_URL = "[suspicious link removed]"
+TWITCH_OAUTH_URL = "https://" + "id.twitch.tv/oauth2/token"
+TWITCH_USERS_URL = "https://" + "api.twitch.tv/helix/users"
+TWITCH_CHAT_URL = "https://" + "[link suspeito removido]"
+KICK_CHANNEL_URL = "https://" + "[suspicious link removed]"
+KICK_CHAT_URL = "https://" + "[suspicious link removed]"
 
 # ==============================================================================
 # MÓDULO TWITCH (HELIX API & APP ACCESS TOKEN)
@@ -96,8 +96,8 @@ class KickService:
         url = f"{KICK_CHANNEL_URL}{clean_slug}"
         try:
             res = requests.get(url, timeout=10)
-            if res.status_code == 200 and res.json().get("data"):
-                return res.json()["data"]
+            if res.status_code == 200:
+                return res.json()
         except Exception as e:
             st.error(f"Erro ao consultar API do Kick: {e}")
         return None
@@ -173,9 +173,8 @@ if st.button("🚀 Conectar Assistente ao Chat", type="primary", use_container_w
                 st.success("✅ **Assistente Conectado com Sucesso no Kick!**")
                 st.json({
                     "Canal": f"@{clean_channel}",
-                    "Broadcaster User ID": channel_data.get("broadcaster_user_id"),
-                    "Título da Stream": channel_data.get("stream_title", "Offline"),
-                    "Categoria": channel_data.get("category", {}).get("name", "N/A")
+                    "Broadcaster User ID": channel_data.get("chatroom", {}).get("id") or channel_data.get("user_id"),
+                    "Título da Stream": channel_data.get("livestream", {}).get("session_title", "Offline") if channel_data.get("livestream") else "Offline",
                 })
                 [link suspeito removido](
                     "ℹ️ **Transparência de IA**: O Kick exige a rotulagem clara de conteúdos "
