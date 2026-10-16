@@ -32,8 +32,8 @@ def show_info_msg(msg):
 
 # URLs das APIs
 URL_TWITCH_OAUTH = "https://" + "id.twitch.tv/oauth2/token"
-URL_TWITCH_USERS = "https://" + "www.twitch.com/"
-URL_KICK_CHANNELS = "https://" + "www.kick.com/"
+URL_TWITCH_USERS = "https://" + "https://api.twitch.tv/helix/users"
+URL_KICK_CHANNELS = "https://" + "https://kick.com{channel_slug}"
 
 
 class TwitchService:
