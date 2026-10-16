@@ -81,7 +81,7 @@ class KickService:
     def fetch_channel(self, channel_slug: str):
         clean_slug = channel_slug.lstrip("@").strip().lower()
         try:
-            target_url = f"{URL_KICK_CHANNELS}{clean_slug}"
+            target_url = f"{URL_KICK_CHANNELS}{?slug=nome-do-canal}"
             res = http_get_call(target_url)
             if res.status_code == 200:
                 return res.json()
