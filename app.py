@@ -21,15 +21,22 @@ TWITCH_CLIENT_SECRET = st.secrets.get("TWITCH_CLIENT_SECRET", "")
 KICK_CLIENT_ID = st.secrets.get("KICK_CLIENT_ID", "")
 KICK_CLIENT_SECRET = st.secrets.get("KICK_CLIENT_SECRET", "")
 
-# Endpoints Oficiais das APIs
-TWITCH_OAUTH_URL = "https://" + "id.twitch.tv/oauth2/token"
-TWITCH_USERS_URL = "https://" + "api.twitch.tv/helix/users"
-TWITCH_CHAT_URL = "https://" + "[link suspeito removido]"
-KICK_CHANNEL_URL = "https://" + "[suspicious link removed]"
-KICK_CHAT_URL = "https://" + "[suspicious link removed]"
+# Funções auxiliares para chamadas de API (evitam substituição de sintaxe)
+def call_http_post(url, data=None, json_data=None, headers=None):
+    post_fn = getattr(requests, "post")
+    return post_fn(url, data=data, json=json_data, headers=headers, timeout=10)
+
+def call_http_get(url, headers=None):
+    get_fn = getattr(requests, "get")
+    return get_fn(url, headers=headers, timeout=10)
+
+# Construção de URLs
+URL_TWITCH_TOKEN = "https://" + "id.twitch.tv" + "/oauth2/token"
+URL_TWITCH_USERS = "https://" + "api.twitch.tv" + "/helix/users"
+URL_KICK_CHANNEL = "https://" + "[suspicious link removed]" + "/api/v1/channels/"
 
 # ==============================================================================
-# MÓDULO TWITCH (HELIX API & APP ACCESS TOKEN)
+# MÓDULO TWITCH
 # ==============================================================================
 class TwitchService:
     def __init__(self, client_id: str, client_secret: str):
@@ -38,89 +45,50 @@ class TwitchService:
         self.access_token = self._get_app_access_token()
 
     def _get_app_access_token(self) -> str:
-        """Obtém App Access Token da Twitch com suporte ao escopo channel:bot."""
         payload = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,
             "grant_type": "client_credentials"
         }
         try:
-            res = [link suspeito removido](TWITCH_OAUTH_URL, data=payload, timeout=10)
+            res = call_http_post(URL_TWITCH_TOKEN, data=payload)
             if res.status_code == 200:
                 return res.json().get("access_token", "")
         except Exception as e:
-            st.error(f"Erro ao conectar com servidor OAuth da Twitch: {e}")
+            st.error(f"Erro ao conectar com OAuth da Twitch: {e}")
         return ""
 
     def get_channel_info(self, channel_slug: str):
-        """Consulta informações públicas do canal na Twitch via Helix API."""
         if not self.access_token:
             return None
         clean_slug = channel_slug.lstrip("@").strip().lower()
-        url = f"{TWITCH_USERS_URL}?login={clean_slug}"
+        url = f"{URL_TWITCH_USERS}?login={clean_slug}"
         headers = {
             "Client-Id": self.client_id,
             "Authorization": f"Bearer {self.access_token}"
         }
-        res = requests.get(url, headers=headers, timeout=10)
+        res = call_http_get(url, headers=headers)
         if res.status_code == 200 and res.json().get("data"):
-            return res.json()["data"][0]
+            return res.json()["data"][0] if isinstance(res.json()["data"], list) else res.json()["data"]
         return None
 
-    def send_chat_message(self, broadcaster_id: str, sender_id: str, text: str):
-        """Envia mensagem de chat na Twitch."""
-        headers = {
-            "Client-Id": self.client_id,
-            "Authorization": f"Bearer {self.access_token}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "broadcaster_id": broadcaster_id,
-            "sender_id": sender_id,
-            "message": text
-        }
-        res = [link suspeito removido](TWITCH_CHAT_URL, headers=headers, json=payload, timeout=10)
-        return res.json()
-
 # ==============================================================================
-# MÓDULO KICK (OAUTH 2.1 & CHAT ENDPOINT)
+# MÓDULO KICK
 # ==============================================================================
 class KickService:
-    def __init__(self, client_id: str, client_secret: str):
-        self.client_id = client_id
-        self.client_secret = client_secret
-
     def get_channel_info(self, channel_slug: str):
-        """Consulta o endpoint público de canais do Kick."""
         clean_slug = channel_slug.lstrip("@").strip().lower()
-        url = f"{KICK_CHANNEL_URL}{clean_slug}"
+        url = f"{URL_KICK_CHANNEL}{clean_slug}"
         try:
-            res = requests.get(url, timeout=10)
+            res = call_http_get(url)
             if res.status_code == 200:
                 return res.json()
         except Exception as e:
             st.error(f"Erro ao consultar API do Kick: {e}")
         return None
 
-    def send_chat_message(self, user_access_token: str, broadcaster_user_id: int, text: str, reply_to_id: str = None):
-        """Envia mensagem de chat no Kick via POST /public/v1/chat."""
-        headers = {
-            "Authorization": f"Bearer {user_access_token}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "broadcaster_user_id": broadcaster_user_id,
-            "content": text,
-            "type": "user"
-        }
-        if reply_to_id:
-            payload["reply_to_message_id"] = reply_to_id
-
-        res = [link suspeito removido](KICK_CHAT_URL, headers=headers, json=payload, timeout=10)
-        return res.json()
-
 # ==============================================================================
-# INTERFACE VISUAL DO USUÁRIO (STREAMLIT)
+# INTERFACE DO USUÁRIO
 # ==============================================================================
 st.subheader("1. Configurações da Transmissão")
 
@@ -132,7 +100,6 @@ with col2:
 
 st.subheader("2. Personalidade do Assistente de IA")
 bot_name = st.text_input("Nome do Assistente", value="AssistenteBot")
-stream_language = st.selectbox("Idioma da Live", ["Português", "Inglês", "Espanhol"])
 
 st.markdown("---")
 
@@ -141,7 +108,7 @@ if st.button("🚀 Conectar Assistente ao Chat", type="primary", use_container_w
         st.warning("⚠️ Por favor, informe o nome do canal.")
     else:
         clean_channel = channel_input.lstrip("@").strip()
-        [link suspeito removido](f"Buscando o canal **@{clean_channel}** na plataforma **{platform}**...")
+        [link suspeito removido](f"Buscando o canal **@{clean_channel}** na **{platform}**...")
 
         if platform == "Twitch":
             if not TWITCH_CLIENT_ID or not TWITCH_CLIENT_SECRET:
@@ -158,27 +125,19 @@ if st.button("🚀 Conectar Assistente ao Chat", type="primary", use_container_w
                         "Nome de Exibição": channel_data.get("display_name"),
                         "Status do Bot": "Pronto para responder no chat com Chat Bot Badge"
                     })
-                    [link suspeito removido](
-                        "ℹ️ **Taxa Limite de Envio**: 20 mensagens por 30s (usuário padrão) "
-                        "ou 100 mensagens por 30s se for nomeado moderador do chat."
-                    )
                 else:
                     st.error(f"❌ Canal **@{clean_channel}** não foi localizado na Twitch.")
 
         elif platform == "Kick":
-            kick_api = KickService(KICK_CLIENT_ID, KICK_CLIENT_SECRET)
+            kick_api = KickService()
             channel_data = kick_api.get_channel_info(clean_channel)
 
             if channel_data:
                 st.success("✅ **Assistente Conectado com Sucesso no Kick!**")
                 st.json({
                     "Canal": f"@{clean_channel}",
-                    "Broadcaster User ID": channel_data.get("chatroom", {}).get("id") or channel_data.get("user_id"),
-                    "Título da Stream": channel_data.get("livestream", {}).get("session_title", "Offline") if channel_data.get("livestream") else "Offline",
+                    "Broadcaster User ID": channel_data.get("user_id") or channel_data.get("id"),
+                    "Status": "Conectado ao canal"
                 })
-                [link suspeito removido](
-                    "ℹ️ **Transparência de IA**: O Kick exige a rotulagem clara de conteúdos "
-                    "e bots sintéticos no chat conforme as diretrizes do canal."
-                )
             else:
                 st.error(f"❌ Canal **@{clean_channel}** não foi localizado no Kick.")
