@@ -59,14 +59,11 @@ class TwitchService:
         }
         res = requests.get(url, headers=headers, timeout=10)
         if res.status_code == 200 and res.json().get("data"):
-            return res.json()["data"]
+            return res.json()["data"][0]
         return None
 
     def send_chat_message(self, broadcaster_id: str, sender_id: str, text: str):
-        """
-        Envia mensagem de chat na Twitch.
-        Garante o selo Chat Bot Badge quando autorizado com o escopo channel:bot.
-        """
+        """Envia mensagem de chat na Twitch."""
         url = "[suspicious link removed]"
         headers = {
             "Client-Id": self.client_id,
@@ -102,11 +99,8 @@ class KickService:
         return None
 
     def send_chat_message(self, user_access_token: str, broadcaster_user_id: int, text: str, reply_to_id: str = None):
-        """
-        Envia mensagem de chat no Kick via POST /public/v1/chat.
-        Requer o escopo chat:write obtido via OAuth 2.1.
-        """
-        url = "https://api.kick.com/public/v1/chat"
+        """Envia mensagem de chat no Kick via POST /public/v1/chat."""
+        url = "[suspicious link removed]"
         headers = {
             "Authorization": f"Bearer {user_access_token}",
             "Content-Type": "application/json"
@@ -154,7 +148,7 @@ if st.button("🚀 Conectar Assistente ao Chat", type="primary", use_container_w
                 channel_data = twitch_api.get_channel_info(clean_channel)
 
                 if channel_data:
-                    st.success(f"✅ **Assistente Conectado com Sucesso na Twitch!**")
+                    st.success("✅ **Assistente Conectado com Sucesso na Twitch!**")
                     st.json({
                         "Canal": f"@{clean_channel}",
                         "Broadcaster ID": channel_data.get("id"),
@@ -173,7 +167,7 @@ if st.button("🚀 Conectar Assistente ao Chat", type="primary", use_container_w
             channel_data = kick_api.get_channel_info(clean_channel)
 
             if channel_data:
-                st.success(f"✅ **Assistente Conectado com Sucesso no Kick!**")
+                st.success("✅ **Assistente Conectado com Sucesso no Kick!**")
                 st.json({
                     "Canal": f"@{clean_channel}",
                     "Broadcaster User ID": channel_data.get("broadcaster_user_id"),
