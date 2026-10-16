@@ -1,4 +1,3 @@
-import os
 import requests
 import streamlit as st
 
@@ -22,6 +21,13 @@ TWITCH_CLIENT_SECRET = st.secrets.get("TWITCH_CLIENT_SECRET", "")
 KICK_CLIENT_ID = st.secrets.get("KICK_CLIENT_ID", "")
 KICK_CLIENT_SECRET = st.secrets.get("KICK_CLIENT_SECRET", "")
 
+# Endpoints Oficiais das APIs
+TWITCH_OAUTH_URL = "https://id." + "twitch.tv/oauth2/token"
+TWITCH_USERS_URL = "https://api." + "twitch.tv/helix/users"
+TWITCH_CHAT_URL = "https://api." + "twitch.tv/helix/chat/messages"
+KICK_CHANNEL_URL = "[suspicious link removed]"
+KICK_CHAT_URL = "[suspicious link removed]"
+
 # ==============================================================================
 # MÓDULO TWITCH (HELIX API & APP ACCESS TOKEN)
 # ==============================================================================
@@ -33,14 +39,13 @@ class TwitchService:
 
     def _get_app_access_token(self) -> str:
         """Obtém App Access Token da Twitch com suporte ao escopo channel:bot."""
-        url = "[suspicious link removed]"
         payload = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,
             "grant_type": "client_credentials"
         }
         try:
-            res = [link suspeito removido](url, data=payload, timeout=10)
+            res = [link suspeito removido](TWITCH_OAUTH_URL, data=payload, timeout=10)
             if res.status_code == 200:
                 return res.json().get("access_token", "")
         except Exception as e:
@@ -52,7 +57,7 @@ class TwitchService:
         if not self.access_token:
             return None
         clean_slug = channel_slug.lstrip("@").strip().lower()
-        url = f"[suspicious link removed]{clean_slug}"
+        url = f"{TWITCH_USERS_URL}?login={clean_slug}"
         headers = {
             "Client-Id": self.client_id,
             "Authorization": f"Bearer {self.access_token}"
@@ -64,7 +69,6 @@ class TwitchService:
 
     def send_chat_message(self, broadcaster_id: str, sender_id: str, text: str):
         """Envia mensagem de chat na Twitch."""
-        url = "[suspicious link removed]"
         headers = {
             "Client-Id": self.client_id,
             "Authorization": f"Bearer {self.access_token}",
@@ -75,7 +79,7 @@ class TwitchService:
             "sender_id": sender_id,
             "message": text
         }
-        res = [link suspeito removido](url, headers=headers, json=payload, timeout=10)
+        res = [link suspeito removido](TWITCH_CHAT_URL, headers=headers, json=payload, timeout=10)
         return res.json()
 
 # ==============================================================================
@@ -89,7 +93,7 @@ class KickService:
     def get_channel_info(self, channel_slug: str):
         """Consulta o endpoint público de canais do Kick."""
         clean_slug = channel_slug.lstrip("@").strip().lower()
-        url = f"[suspicious link removed]{clean_slug}"
+        url = f"{KICK_CHANNEL_URL}{clean_slug}"
         try:
             res = requests.get(url, timeout=10)
             if res.status_code == 200 and res.json().get("data"):
@@ -100,7 +104,6 @@ class KickService:
 
     def send_chat_message(self, user_access_token: str, broadcaster_user_id: int, text: str, reply_to_id: str = None):
         """Envia mensagem de chat no Kick via POST /public/v1/chat."""
-        url = "[suspicious link removed]"
         headers = {
             "Authorization": f"Bearer {user_access_token}",
             "Content-Type": "application/json"
@@ -113,7 +116,7 @@ class KickService:
         if reply_to_id:
             payload["reply_to_message_id"] = reply_to_id
 
-        res = [link suspeito removido](url, headers=headers, json=payload, timeout=10)
+        res = [link suspeito removido](KICK_CHAT_URL, headers=headers, json=payload, timeout=10)
         return res.json()
 
 # ==============================================================================
